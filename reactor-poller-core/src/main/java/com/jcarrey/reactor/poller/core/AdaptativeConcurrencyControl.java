@@ -70,13 +70,16 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
             pendingRequests.incrementAndGet();
 
             poller.poll()
+                    // Move away from poller thread - whatever that is
+                    .publishOn(Schedulers.boundedElastic())
                     .onErrorStop()
-                    .subscribeOn(Schedulers.boundedElastic())
                     .doOnError(err -> {
                         // FreeUp concurrent slot and keep requesting
+                        log.warn("sqs-poll failed - skip", err);
                         this.finishRequest();
                         this.consume(subscriber);
                     })
+                    .subscribeOn(Schedulers.boundedElastic())
                     .subscribe(el -> {
                         this.adaptConcurrency(el);
                         this.finishRequest();
@@ -109,11 +112,9 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
         var operation = strategy.calculate(element);
         if (!isNoop(operation)) {
             log.trace("Executing operation {}", operation);
-             concurrencyUpdateLock.lock();
+            concurrencyUpdateLock.lock();
             tryAdaptConcurrencyWithPermit(operation);
-             concurrencyUpdateLock.unlock();
-        } else {
-            log.trace("Strategy operation is = {}. No action needed", operation);
+            concurrencyUpdateLock.unlock();
         }
     }
 
@@ -150,11 +151,9 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
     }
 
     private boolean isNoop(ConcurrencyControlOperation operation) {
+        if (operation == Noop) return true;
         var concurrency = currentConcurrency.get();
-        var concurrencyAtMax = concurrency == options.getMaxConcurrency();
-        var concurrencyAtMin = concurrency == options.getMinConcurrency();
-        return operation == Noop ||
-                (operation == ScaleUp && concurrencyAtMax) ||
-                (operation == ScaleDown && concurrencyAtMin);
+        return operation == ScaleUp && concurrency == options.getMaxConcurrency()
+             || operation == ScaleDown && concurrency == options.getMinConcurrency();
     }
 }

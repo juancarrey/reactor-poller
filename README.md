@@ -53,8 +53,8 @@ var options = ConcurrencyControlOptions.<Integer>builder()
      case 1 -> ConcurrencyControlOperation.ScaleDown;
      default -> ConcurrencyControlOperation.Noop;
   })
-  .scaleUpFn(new MaxConcurrencyControlFn())
-  .scaleDownFn(new LinearConcurrencyControlFn())
+  .scaleUpFn(ConcurrencyControlFunctions.max())
+  .scaleDownFn(ConcurrencyControlFunctions.max())
   .build();
 
 PollerFlux.adaptative(poller, options)
@@ -78,8 +78,8 @@ var options = ConcurrencyControlOptions.<ReceiveMessageResponse>builder()
   .maxConcurrency(10)
   .minConcurrency(1)
   .strategy(SqsStrategies.thresholdScaleUp(8))
-  .scaleUpFn(new MaxConcurrencyControlFn())
-  .scaleDownFn(new LinearConcurrencyControlFn())
+  .scaleUpFn(ConcurrencyControlFunctions.max())
+  .scaleDownFn(ConcurrencyControlFunctions.max())
   .build();
 
 PollerFlux.adaptative(new SqsPoller(sqsClient, receiveRequest), options).subscribe();
