@@ -1,7 +1,6 @@
 package com.jcarrey.reactor.poller.core;
 
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlFunction;
-import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlFunctions;
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlTrigger;
 import lombok.Builder;
 import lombok.Getter;
