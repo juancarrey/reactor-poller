@@ -55,6 +55,7 @@ var options = ConcurrencyControlOptions.<Integer>builder()
   })
   .scaleUpFn(ConcurrencyControlFunctions.max())
   .scaleDownFn(ConcurrencyControlFunctions.max())
+  .lockMechanism(ConcurrencyLockMechanism.Pessimistic)
   .build();
 
 ReactorPoller.adaptative(poller, options).subscribe();
@@ -79,6 +80,7 @@ var options = ConcurrencyControlOptions.<ReceiveMessageResponse>builder()
   .strategy(SqsStrategies.thresholdScaleUp(8))
   .scaleUpFn(ConcurrencyControlFunctions.max())
   .scaleDownFn(ConcurrencyControlFunctions.max())
+  .lockMechanism(ConcurrencyLockMechanism.None)
   .build();
 
   ReactorPoller.adaptative(new SqsPoller(sqsClient, receiveRequest), options).subscribe();
