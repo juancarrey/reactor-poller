@@ -35,10 +35,6 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
     }
 
     private void onRequest(FluxSink<T> subscriber) {
-        consume(subscriber);
-    }
-
-    private void consume(FluxSink<T> subscriber) {
         if (subscriber.isCancelled()) {
             log.trace("Cancelled - No more consumption");
             return;
@@ -56,36 +52,20 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
                     // Move away from poller thread - whatever that is
                     .publishOn(Schedulers.boundedElastic())
                     .onErrorStop()
-                    .doOnError(err -> {
-                        // FreeUp concurrent slot and keep requesting
-                        log.warn("poller failed - skip", err);
-                        this.finishRequest();
-                        this.consume(subscriber);
-                    })
+                    .doOnTerminate(pendingRequests::decrementAndGet)
+                    .doOnError(err -> this.onRequest(subscriber))
                     .subscribeOn(Schedulers.boundedElastic())
                     .subscribe(el -> {
-                        this.adaptConcurrency(subscriber, el);
-                        this.finishRequest();
-                        this.next(subscriber, el);
-                        this.consume(subscriber);
+                        if (!subscriber.isCancelled()) {
+                            this.adaptConcurrency(el);
+                            subscriber.next(el);
+                            this.onRequest(subscriber);
+                        }
                     });
         }
     }
 
-    private void next(FluxSink<T> subscriber, T el) {
-        if (!subscriber.isCancelled()) {
-            subscriber.next(el);
-        }
-    }
-
-    private void finishRequest() {
-        pendingRequests.decrementAndGet();
-    }
-
-    private void adaptConcurrency(FluxSink<T> subscriber, T element) {
-        if (subscriber.isCancelled()) {
-            return;
-        }
+    private void adaptConcurrency(T element) {
         var strategy = options.getStrategy();
         var operation = strategy.calculate(element);
         if (!isNoop(operation)) {
