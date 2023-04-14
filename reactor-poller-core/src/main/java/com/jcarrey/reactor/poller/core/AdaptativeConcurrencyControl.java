@@ -1,6 +1,7 @@
 package com.jcarrey.reactor.poller.core;
 
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlOperation;
+import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyLockMechanism;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
@@ -69,10 +70,15 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
         var strategy = options.getStrategy();
         var operation = strategy.calculate(element);
         if (!isNoop(operation)) {
-            log.trace("Executing operation {}", operation);
-            concurrencyUpdateLock.lock();
+            if (options.getLockMechanism() == ConcurrencyLockMechanism.Pessimistic) {
+                concurrencyUpdateLock.lock();
+            }
+
             tryAdaptConcurrencyWithPermit(operation);
-            concurrencyUpdateLock.unlock();
+
+            if (options.getLockMechanism() == ConcurrencyLockMechanism.Pessimistic) {
+                concurrencyUpdateLock.unlock();
+            }
         }
     }
 
@@ -100,12 +106,12 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
     private int calculateNext(int current, int delta) {
         var max = options.getMaxConcurrency();
         var min = options.getMinConcurrency();
-        switch (delta) {
-            case 0: return current;
-            case Integer.MAX_VALUE: return max;
-            case Integer.MIN_VALUE: return min;
-            default: return Integer.min(Integer.max(current + delta, min), max);
-        }
+        return switch (delta) {
+            case 0 -> current;
+            case Integer.MAX_VALUE -> max;
+            case Integer.MIN_VALUE -> min;
+            default -> Integer.min(Integer.max(current + delta, min), max);
+        };
     }
 
     private boolean isNoop(ConcurrencyControlOperation operation) {

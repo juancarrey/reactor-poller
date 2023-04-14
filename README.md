@@ -17,23 +17,23 @@ This library is published to maven central, you can use either raw `reactor-poll
 <dependency>
     <groupId>com.jcarrey</groupId>
     <artifactId>reactor-poller-core</artifactId>
-    <version>0.0.3</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
 ```yaml
-implementation 'com.jcarrey:reactor-poller-core:0.0.3'
+implementation 'com.jcarrey:reactor-poller-core:0.1.0'
 ```
 
 ```xml
 <dependency>
     <groupId>com.jcarrey</groupId>
     <artifactId>reactor-poller-sqs</artifactId>
-    <version>0.0.3</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 ```yaml
-implementation 'com.jcarrey:reactor-poller-sqs:0.0.3'
+implementation 'com.jcarrey:reactor-poller-sqs:0.1.0'
 ```
 
 ## Sample usages
@@ -57,8 +57,7 @@ var options = ConcurrencyControlOptions.<Integer>builder()
   .scaleDownFn(ConcurrencyControlFunctions.max())
   .build();
 
-PollerFlux.adaptative(poller, options)
-  .subscribe();
+ReactorPoller.adaptative(poller, options).subscribe();
 ```
 
 ### SQS API usage sample
@@ -82,5 +81,5 @@ var options = ConcurrencyControlOptions.<ReceiveMessageResponse>builder()
   .scaleDownFn(ConcurrencyControlFunctions.max())
   .build();
 
-PollerFlux.adaptative(new SqsPoller(sqsClient, receiveRequest), options).subscribe();
+  ReactorPoller.adaptative(new SqsPoller(sqsClient, receiveRequest), options).subscribe();
 ```

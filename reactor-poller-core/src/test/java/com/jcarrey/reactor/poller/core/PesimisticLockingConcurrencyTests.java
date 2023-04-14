@@ -3,10 +3,12 @@ package com.jcarrey.reactor.poller.core;
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlFunction;
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlOperation;
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlTrigger;
+import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyLockMechanism;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,7 +28,7 @@ import static org.mockito.Mockito.times;
 
 @Slf4j
 @ExtendWith({MockitoExtension.class})
-public class PollerFluxTests {
+public class PesimisticLockingConcurrencyTests {
 
     @Mock
     private Poller<Integer> poller;
@@ -46,7 +48,17 @@ public class PollerFluxTests {
     public void setup() {
         Mockito.when(poller.poll()).thenReturn(Mono.just(1));
 
-        this.pipeline = PollerFlux.adaptative(poller, new ConcurrencyControlOptions<>(5, 1, 10, strategy, scaleUp, scaleDown))
+        var options = ConcurrencyControlOptions.<Integer>builder()
+                .initialConcurrency(5)
+                .minConcurrency(1)
+                .maxConcurrency(10)
+                .strategy(strategy)
+                .scaleUpFn(scaleUp)
+                .scaleDownFn(scaleDown)
+                .lockMechanism(ConcurrencyLockMechanism.Pessimistic)
+                .build();
+
+        this.pipeline = ReactorPoller.adaptative(poller, options)
                 .log();
     }
 
@@ -138,7 +150,7 @@ public class PollerFluxTests {
                 .build();
 
         Mockito.when(strategy.calculate(anyInt())).thenReturn(ConcurrencyControlOperation.Noop);
-        this.pipeline = PollerFlux.adaptative(poller, options)
+        this.pipeline = ReactorPoller.adaptative(poller, options)
                 .log();
 
         StepVerifier.create(pipeline)

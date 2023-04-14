@@ -2,7 +2,7 @@ package com.jcarrey.reactor.poller.core;
 
 import reactor.core.publisher.Flux;
 
-public class PollerFlux {
+public class ReactorPoller {
 
     /**
      * Creates an adaptative poller that adapts concurrency based on the options
@@ -15,5 +15,5 @@ public class PollerFlux {
         return Flux.create(new AdaptativeConcurrencyControl<>(poller, options));
     }
 
-    private PollerFlux() {}
+    private ReactorPoller() {}
 }

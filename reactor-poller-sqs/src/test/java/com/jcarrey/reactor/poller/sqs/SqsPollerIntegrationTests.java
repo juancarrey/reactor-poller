@@ -1,7 +1,7 @@
 package com.jcarrey.reactor.poller.sqs;
 
 import com.jcarrey.reactor.poller.core.ConcurrencyControlOptions;
-import com.jcarrey.reactor.poller.core.PollerFlux;
+import com.jcarrey.reactor.poller.core.ReactorPoller;
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlFunctions;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
@@ -66,7 +66,7 @@ public class SqsPollerIntegrationTests {
                 .scaleDownFn(ConcurrencyControlFunctions.max())
                 .build();
 
-        var poller = PollerFlux.adaptative(new SqsPoller(client, receiveRequest), options)
+        var poller = ReactorPoller.adaptative(new SqsPoller(client, receiveRequest), options)
                 .flatMapIterable(ReceiveMessageResponse::messages);
 
         var duration = StepVerifier.create(poller)
