@@ -17,23 +17,23 @@ This library is published to maven central, you can use either raw `reactor-poll
 <dependency>
     <groupId>com.jcarrey</groupId>
     <artifactId>reactor-poller-core</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 </dependency>
 ```
 
 ```yaml
-implementation 'com.jcarrey:reactor-poller-core:0.0.2'
+implementation 'com.jcarrey:reactor-poller-core:0.0.3'
 ```
 
 ```xml
 <dependency>
     <groupId>com.jcarrey</groupId>
     <artifactId>reactor-poller-sqs</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 </dependency>
 ```
 ```yaml
-implementation 'com.jcarrey:reactor-poller-sqs:0.0.2'
+implementation 'com.jcarrey:reactor-poller-sqs:0.0.3'
 ```
 
 ## Sample usages
