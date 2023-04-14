@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -20,11 +19,8 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
     private final Poller<T> poller;
     private final ConcurrencyControlOptions<T> options;
 
-    private final AtomicLong requested = new AtomicLong();
     private final AtomicInteger currentConcurrency;
     private final AtomicLong pendingRequests = new AtomicLong(0);
-    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
     private final ReentrantLock concurrencyUpdateLock = new ReentrantLock();
 
     public AdaptativeConcurrencyControl(Poller<T> poller, ConcurrencyControlOptions<T> options) {
@@ -35,53 +31,40 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
 
     @Override
     public void accept(FluxSink<T> subscriber) {
-        subscriber.onRequest(requestCount -> this.onRequest(subscriber, requestCount));
-        subscriber.onCancel(this::onCancel);
-        subscriber.onDispose(this::onDispose);
+        subscriber.onRequest(requestCount -> this.onRequest(subscriber));
     }
 
-    private void onRequest(FluxSink<T> subscriber, long count) {
-        if (count != Long.MAX_VALUE) {
-            requested.addAndGet(count);
-        } else {
-            requested.set(Long.MAX_VALUE);
-        }
-
-        // Trigger available space
+    private void onRequest(FluxSink<T> subscriber) {
         consume(subscriber);
     }
 
-    private void onCancel() {
-        cancelled.compareAndSet(false, true);
-    }
-
-    private void onDispose() {
-        cancelled.compareAndSet(false, true);
-    }
-
     private void consume(FluxSink<T> subscriber) {
-        if (cancelled.get()) {
+        if (subscriber.isCancelled()) {
             log.trace("Cancelled - No more consumption");
             return;
         }
 
         var availableConcurrency = currentConcurrency.get() - pendingRequests.get();
-        for (int i = 0; i < availableConcurrency; i++) {
-            pendingRequests.incrementAndGet();
+        var maxRequests = Math.min(subscriber.requestedFromDownstream(), availableConcurrency);
+        for (int i = 0; i < maxRequests; i++) {
+            if (subscriber.isCancelled()) {
+                break;
+            }
 
+            pendingRequests.incrementAndGet();
             poller.poll()
                     // Move away from poller thread - whatever that is
                     .publishOn(Schedulers.boundedElastic())
                     .onErrorStop()
                     .doOnError(err -> {
                         // FreeUp concurrent slot and keep requesting
-                        log.warn("sqs-poll failed - skip", err);
+                        log.warn("poller failed - skip", err);
                         this.finishRequest();
                         this.consume(subscriber);
                     })
                     .subscribeOn(Schedulers.boundedElastic())
                     .subscribe(el -> {
-                        this.adaptConcurrency(el);
+                        this.adaptConcurrency(subscriber, el);
                         this.finishRequest();
                         this.next(subscriber, el);
                         this.consume(subscriber);
@@ -90,24 +73,19 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
     }
 
     private void next(FluxSink<T> subscriber, T el) {
-        if (!cancelled.get()) {
+        if (!subscriber.isCancelled()) {
             subscriber.next(el);
         }
     }
 
     private void finishRequest() {
         pendingRequests.decrementAndGet();
-        if (requested.get() != Long.MAX_VALUE) {
-            // Handled one of requested items
-            requested.decrementAndGet();
-        }
     }
 
-    private void adaptConcurrency(T element) {
-        if (this.cancelled.get()) {
+    private void adaptConcurrency(FluxSink<T> subscriber, T element) {
+        if (subscriber.isCancelled()) {
             return;
         }
-
         var strategy = options.getStrategy();
         var operation = strategy.calculate(element);
         if (!isNoop(operation)) {
