@@ -4,7 +4,6 @@ import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlOperation;
 import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyLockMechanism;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.FluxSink;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -51,11 +50,9 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
             pendingRequests.incrementAndGet();
             poller.poll()
                     // Move away from poller thread - whatever that is
-                    .publishOn(Schedulers.boundedElastic())
                     .onErrorStop()
                     .doOnTerminate(pendingRequests::decrementAndGet)
                     .doOnError(err -> this.onRequest(subscriber))
-                    .subscribeOn(Schedulers.boundedElastic())
                     .subscribe(el -> {
                         if (!subscriber.isCancelled()) {
                             this.adaptConcurrency(el);
