@@ -2,6 +2,7 @@ package com.jcarrey.reactor.poller.sqs;
 
 import com.jcarrey.reactor.poller.core.Poller;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
@@ -17,6 +18,8 @@ public class SqsPoller implements Poller<ReceiveMessageResponse> {
 
     @Override
     public Mono<ReceiveMessageResponse> poll() {
-        return Mono.fromFuture(client.receiveMessage(request));
+        return Mono.fromFuture(client.receiveMessage(request))
+                .publishOn(Schedulers.parallel())
+                .subscribeOn(Schedulers.parallel());
     }
 }
