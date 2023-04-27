@@ -13,9 +13,10 @@ class ExponentialConcurrencyControlFn implements ConcurrencyControlFunction {
 
     @Override
     public double calculateDelta(double currentConcurrency, ConcurrencyControlOperation operation) {
-        // When power = 2, each concurrent worker needs to add +1
-        // When power = 3, each concurrent worker needs to add +2
-        // When power = 4, each concurrent worker needs to add +3
+        if (operation == ConcurrencyControlOperation.ScaleDown) {
+            return (1 - 1 / power);
+        }
+
         return power - 1;
     }
 }
