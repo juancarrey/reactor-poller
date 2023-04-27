@@ -17,23 +17,23 @@ This library is published to maven central, you can use either raw `reactor-poll
 <dependency>
     <groupId>com.jcarrey</groupId>
     <artifactId>reactor-poller-core</artifactId>
-    <version>0.1.1</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
 ```yaml
-implementation 'com.jcarrey:reactor-poller-core:0.1.1'
+implementation 'com.jcarrey:reactor-poller-core:0.2.0'
 ```
 
 ```xml
 <dependency>
     <groupId>com.jcarrey</groupId>
     <artifactId>reactor-poller-sqs</artifactId>
-    <version>0.1.1</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 ```yaml
-implementation 'com.jcarrey:reactor-poller-sqs:0.1.1'
+implementation 'com.jcarrey:reactor-poller-sqs:0.2.0'
 ```
 
 ## Sample usages
@@ -74,9 +74,9 @@ var receiveRequest =  ReceiveMessageRequest.builder()
   .build();
 
 var options = ConcurrencyControlOptions.<ReceiveMessageResponse>builder()
-  .initialConcurrency(1)
-  .maxConcurrency(10)
-  .minConcurrency(1)
+  .initialConcurrency(1d)
+  .maxConcurrency(10d)
+  .minConcurrency(1d)
   .strategy(SqsStrategies.thresholdScaleUp(8))
   .scaleUpFn(ConcurrencyControlFunctions.max())
   .scaleDownFn(ConcurrencyControlFunctions.max())

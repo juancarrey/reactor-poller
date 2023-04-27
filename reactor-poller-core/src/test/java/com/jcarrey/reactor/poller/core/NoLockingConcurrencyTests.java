@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlOperation.ScaleDown;
 import static com.jcarrey.reactor.poller.core.concurrency.ConcurrencyControlOperation.ScaleUp;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -64,7 +65,7 @@ public class NoLockingConcurrencyTests {
 
     @Test
     public void scalesUpBasedOnStrategy() {
-        Mockito.when(scaleUp.calculateDelta(anyInt(), any())).thenReturn(1);
+        Mockito.when(scaleUp.calculateDelta(anyDouble(), any())).thenReturn(1d);
         Mockito.when(strategy.calculate(1)).thenReturn(ScaleUp);
 
         StepVerifier.create(pipeline)
@@ -83,7 +84,7 @@ public class NoLockingConcurrencyTests {
 
     @Test
     public void scalesUpToMaxConcurrency() {
-        Mockito.when(scaleUp.calculateDelta(anyInt(), any())).thenReturn(Integer.MAX_VALUE);
+        Mockito.when(scaleUp.calculateDelta(anyDouble(), any())).thenReturn(Double.MAX_VALUE);
         Mockito.when(strategy.calculate(1)).thenReturn(ScaleUp);
 
         StepVerifier.create(pipeline)
@@ -98,7 +99,7 @@ public class NoLockingConcurrencyTests {
 
     @Test
     public void scalesDownBasedOnStrategy() {
-        Mockito.when(scaleDown.calculateDelta(anyInt(), any())).thenReturn(1);
+        Mockito.when(scaleDown.calculateDelta(anyDouble(), any())).thenReturn(1d);
         Mockito.when(strategy.calculate(1)).thenReturn(ScaleDown);
 
         StepVerifier.create(pipeline)
@@ -116,7 +117,7 @@ public class NoLockingConcurrencyTests {
 
     @Test
     public void scalesUpToMinConcurrency() {
-        Mockito.when(scaleDown.calculateDelta(anyInt(), any())).thenReturn(Integer.MAX_VALUE);
+        Mockito.when(scaleDown.calculateDelta(anyDouble(), any())).thenReturn(Double.MAX_VALUE);
         Mockito.when(strategy.calculate(1)).thenReturn(ScaleDown);
 
         StepVerifier.create(pipeline)
@@ -169,7 +170,7 @@ public class NoLockingConcurrencyTests {
         Mockito.when(strategy.calculate(6)).thenReturn(ScaleUp);
         Mockito.when(strategy.calculate(7)).thenReturn(ScaleUp);
         Mockito.when(strategy.calculate(8)).thenReturn(ConcurrencyControlOperation.Noop);
-        Mockito.when(scaleUp.calculateDelta(anyInt(), any())).thenReturn(1);
+        Mockito.when(scaleUp.calculateDelta(anyDouble(), any())).thenReturn(1d);
 
         StepVerifier.create(pipeline)
                 .expectNextCount(10)

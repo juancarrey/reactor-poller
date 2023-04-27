@@ -17,18 +17,18 @@ public class ConcurrencyControlOptions<T> {
      * How many concurrent polls may happen at a given time based on the
      * request(N) amount from downstream
      */
-    private final int initialConcurrency;
+    private final double initialConcurrency;
     /**
      * The minimum concurrent polls that may happen at any given time, must be >= 1.
      * We recommend setting this to 1.
      * Even if scale-down events happen, concurrent polls won't be lower than this number.
      */
-    private final int minConcurrency;
+    private final double minConcurrency;
     /**
      * The maximum amount of concurrent polls that may happen at any given time.
      * Even if scale-up events happen, concurrent polls won't be higher than this number.
      */
-    private final int maxConcurrency;
+    private final double maxConcurrency;
     /**
      * Defines when to trigger a scale-up or scale-down based on the response from the poller
      * If there is no data, one would scale down, and when there is, it may scale up.
@@ -55,9 +55,9 @@ public class ConcurrencyControlOptions<T> {
     private final ConcurrencyLockMechanism lockMechanism;
 
     public ConcurrencyControlOptions(
-            int initialConcurrency,
-            int minConcurrency,
-            int maxConcurrency,
+            double initialConcurrency,
+            double minConcurrency,
+            double maxConcurrency,
             @Nullable ConcurrencyControlTrigger<T> strategy,
             @Nullable ConcurrencyControlFunction scaleUpFn,
             @Nullable ConcurrencyControlFunction scaleDownFn,

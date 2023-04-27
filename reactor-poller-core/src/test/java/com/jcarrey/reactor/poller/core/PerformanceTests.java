@@ -30,7 +30,7 @@ public class PerformanceTests {
     private static final double THROUGHPUT_PER_CONCURRENCY = 30d;
 
     private static final int TOTAL_MESSAGES = 100000;
-    private static final int MAX_CONCURRENCY = 1000;
+    private static final double MAX_CONCURRENCY = 1000d;
     //
     // 1 concurrency >35 msg/s
     // 500 concurrency >17500 msg/s
@@ -78,8 +78,8 @@ public class PerformanceTests {
                 .minConcurrency(1)
                 .maxConcurrency(MAX_CONCURRENCY)
                 .strategy(__ -> ScaleUp)
-                .scaleUpFn((c, op) -> Integer.MAX_VALUE)
-                .scaleDownFn((c, op) -> Integer.MAX_VALUE)
+                .scaleUpFn((c, op) -> Double.MAX_VALUE)
+                .scaleDownFn((c, op) -> Double.MAX_VALUE)
                 .lockMechanism(lockMechanism)
                 .build();
     }

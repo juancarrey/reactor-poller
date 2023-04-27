@@ -6,7 +6,7 @@
 	<groupId>com.jcarrey</groupId>
 	<artifactId>reactor-poller</artifactId>
 	<packaging>pom</packaging>
-	<version>0.1.1</version>
+	<version>0.2.0</version>
 
 	<properties>
 		<java.version>17</java.version>

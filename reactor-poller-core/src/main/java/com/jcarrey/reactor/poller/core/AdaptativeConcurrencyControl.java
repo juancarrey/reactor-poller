@@ -5,8 +5,8 @@ import com.jcarrey.reactor.poller.core.concurrency.ConcurrencyLockMechanism;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.FluxSink;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
@@ -19,14 +19,14 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
     private final Poller<T> poller;
     private final ConcurrencyControlOptions<T> options;
 
-    private final AtomicInteger currentConcurrency;
+    private final AtomicReference<Double> currentConcurrency;
     private final AtomicLong pendingRequests = new AtomicLong(0);
     private final ReentrantLock concurrencyUpdateLock = new ReentrantLock();
 
     public AdaptativeConcurrencyControl(Poller<T> poller, ConcurrencyControlOptions<T> options) {
         this.poller = poller;
         this.options = options;
-        this.currentConcurrency = new AtomicInteger(options.getInitialConcurrency());
+        this.currentConcurrency = new AtomicReference(options.getInitialConcurrency());
     }
 
     @Override
@@ -100,15 +100,20 @@ class AdaptativeConcurrencyControl<T> implements Consumer<FluxSink<T>> {
         }
     }
 
-    private int calculateNext(int current, int delta) {
+    private double calculateNext(double current, double delta) {
         var max = options.getMaxConcurrency();
         var min = options.getMinConcurrency();
-        return switch (delta) {
-            case 0 -> current;
-            case Integer.MAX_VALUE -> max;
-            case Integer.MIN_VALUE -> min;
-            default -> Integer.min(Integer.max(current + delta, min), max);
-        };
+        if (delta == 0d) {
+            return current;
+        }
+        if (delta == Double.MAX_VALUE) {
+            return max;
+        }
+        if (delta == Double.MIN_VALUE) {
+            return min;
+        }
+
+        return Math.min(Math.max(current + delta, min), max);
     }
 
     private boolean isNoop(ConcurrencyControlOperation operation) {

@@ -9,5 +9,5 @@ public interface ConcurrencyControlFunction {
      * @return The delta that will be added up (on scale-up) or substracted (on scale-down) from currentConcurrency
      *         keeping min and max concurrency settings.
      */
-    int calculateDelta(int currentConcurrency, ConcurrencyControlOperation operation);
+    double calculateDelta(double currentConcurrency, ConcurrencyControlOperation operation);
 }
